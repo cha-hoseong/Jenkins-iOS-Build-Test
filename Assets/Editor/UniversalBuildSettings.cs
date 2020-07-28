@@ -26,6 +26,7 @@ public class UniversalBuildSettings : ScriptableObject
         PlayerSettings.SetMobileMTRendering(BuildTargetGroup.iOS, true);
         PlayerSettings.iOS.appleDeveloperTeamID = "V8F8H7L35W";
         PlayerSettings.iOS.appleEnableAutomaticSigning = true;
+        PlayerSettings.iOS.iOSManualProvisioningProfileType = ProvisioningProfileType.Development;
         PlayerSettings.SetScriptingBackend(BuildTargetGroup.iOS, ScriptingImplementation.IL2CPP);
         PlayerSettings.SetApiCompatibilityLevel(BuildTargetGroup.iOS, ApiCompatibilityLevel.NET_4_6);
         PlayerSettings.muteOtherAudioSources = true;
