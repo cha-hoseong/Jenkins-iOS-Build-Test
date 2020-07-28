@@ -23,31 +23,33 @@ public class UniversalBuildSettings : ScriptableObject
     #region Android
     public static void PerformAndroidBuild(string type, string path)
     {
-        var output = Path.Combine(path, "Build/Android");
+        var location = Path.Combine(path, "Build/Android");
         BuildOptions options;
         
         switch (type)
         {
             case "development":
                 SetAndroidBuildSettingsDevelopment();
-                output = Path.Combine(output, "Development");
+                location = Path.Combine(location, "Development");
                 options = BuildOptions.CompressWithLz4;
                 break;
             case "qa":
                 SetAndroidBuildSettingsQA();
-                output = Path.Combine(output, "QA");
+                location = Path.Combine(location, "QA");
                 options = BuildOptions.CompressWithLz4HC;
                 break;
             case "release":
                 SetAndroidBuildSettingsRelease();
-                output = Path.Combine(output, "Release");
+                location = Path.Combine(location, "Release");
                 options = BuildOptions.CompressWithLz4HC;
                 break;
             default:
                 throw new System.ArgumentException($"Invalid argument: {type}");
         }
-
-        output = Path.Combine(output, $"{PlayerSettings.productName}.apk");
+        
+        Directory.CreateDirectory(location);
+        var output = Path.Combine(location, $"{PlayerSettings.productName}.apk");
+        
         PerformBuild(output, BuildTarget.Android, options);
     }
 
@@ -169,7 +171,6 @@ public class UniversalBuildSettings : ScriptableObject
 
     private static void PerformBuild(string location, BuildTarget target, BuildOptions options)
     {
-        Directory.CreateDirectory(location);
         var report = BuildPipeline.BuildPlayer(EnabledLevels, location, target, options);
         Debug.Log($"Build {report.summary.result}");
     }
