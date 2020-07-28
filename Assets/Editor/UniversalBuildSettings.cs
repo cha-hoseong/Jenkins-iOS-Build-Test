@@ -24,7 +24,7 @@ public class UniversalBuildSettings : ScriptableObject
         PlayerSettings.SetGraphicsAPIs(BuildTarget.iOS, new [] { GraphicsDeviceType.Metal });
         PlayerSettings.MTRendering = true;
         PlayerSettings.SetMobileMTRendering(BuildTargetGroup.iOS, true);
-        PlayerSettings.iOS.appleDeveloperTeamID = "Archipin";
+        PlayerSettings.iOS.appleDeveloperTeamID = "V8F8H7L35W";
         PlayerSettings.iOS.appleEnableAutomaticSigning = true;
         PlayerSettings.SetScriptingBackend(BuildTargetGroup.iOS, ScriptingImplementation.IL2CPP);
         PlayerSettings.SetApiCompatibilityLevel(BuildTargetGroup.iOS, ApiCompatibilityLevel.NET_4_6);
