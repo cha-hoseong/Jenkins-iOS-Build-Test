@@ -46,7 +46,8 @@ public class UniversalBuildSettings : ScriptableObject
             default:
                 throw new System.ArgumentException($"Invalid argument: {type}");
         }
-        
+
+        output = Path.Combine(output, $"{PlayerSettings.productName}.apk");
         PerformBuild(output, BuildTarget.Android, options);
     }
 
