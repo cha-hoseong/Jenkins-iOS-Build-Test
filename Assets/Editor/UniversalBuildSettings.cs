@@ -8,17 +8,49 @@ public class UniversalBuildSettings : ScriptableObject
 {
     private enum PlayerSettingsArchitecture
     {
-        None,
-        ARM64,
-        Universal,
+        None = 0,
+        ARM64 = 1,
+        Universal = 2,
     }
     
+    public static bool AssetBuild { get; set; }
+
     private static string[] EnabledLevels => EditorBuildSettings.scenes
         .Where(scene => scene.enabled)
         .Select(scene => scene.path)
         .ToArray();
 
-    public static void PerformAndroidForDevelopment(string outputDirectory)
+    #region Android
+    public static void PerformAndroidBuild(string type, string path)
+    {
+        var output = Path.Combine(path, "Build/Android");
+        BuildOptions options;
+        
+        switch (type)
+        {
+            case "development":
+                SetAndroidBuildSettingsDevelopment();
+                output = Path.Combine(output, "Development");
+                options = BuildOptions.CompressWithLz4;
+                break;
+            case "qa":
+                SetAndroidBuildSettingsQA();
+                output = Path.Combine(output, "QA");
+                options = BuildOptions.CompressWithLz4HC;
+                break;
+            case "release":
+                SetAndroidBuildSettingsRelease();
+                output = Path.Combine(output, "Release");
+                options = BuildOptions.CompressWithLz4HC;
+                break;
+            default:
+                throw new System.ArgumentException($"Invalid argument: {type}");
+        }
+        
+        PerformBuild(output, BuildTarget.Android, options);
+    }
+
+    private static void SetAndroidBuildSettingsDevelopment()
     {
         PlayerSettings.colorSpace = ColorSpace.Linear;
         PlayerSettings.SetGraphicsAPIs(BuildTarget.Android,
@@ -37,15 +69,80 @@ public class UniversalBuildSettings : ScriptableObject
         EditorUserBuildSettings.development = true;
         EditorUserBuildSettings.connectProfiler = true;
         EditorUserBuildSettings.allowDebugging = true;
-
-        var targetDirectory = Path.Combine(outputDirectory, "Build/Android/Development");
-        if (!Directory.Exists(targetDirectory))
-            Directory.CreateDirectory(targetDirectory);
-        
-        PerformBuild(targetDirectory, BuildTarget.Android, BuildOptions.CompressWithLz4);
     }
+
+    private static void SetAndroidBuildSettingsQA()
+    {
+        PlayerSettings.colorSpace = ColorSpace.Linear;
+        PlayerSettings.SetGraphicsAPIs(BuildTarget.Android,
+            new [] { GraphicsDeviceType.Vulkan, GraphicsDeviceType.OpenGLES3 });
+        PlayerSettings.MTRendering = true;
+        PlayerSettings.SetMobileMTRendering(BuildTargetGroup.Android, true);
+        PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel19;
+        PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+        PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
+        PlayerSettings.SetApiCompatibilityLevel(BuildTargetGroup.Android, ApiCompatibilityLevel.NET_4_6);
+        PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.Android, Il2CppCompilerConfiguration.Release);
+        PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+
+        EditorUserBuildSettings.androidBuildType = AndroidBuildType.Release;
+        EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+        EditorUserBuildSettings.development = true;
+        EditorUserBuildSettings.connectProfiler = true;
+        EditorUserBuildSettings.allowDebugging = false;
+    }
+
+    private static void SetAndroidBuildSettingsRelease()
+    {
+        PlayerSettings.colorSpace = ColorSpace.Linear;
+        PlayerSettings.SetGraphicsAPIs(BuildTarget.Android,
+            new [] { GraphicsDeviceType.Vulkan, GraphicsDeviceType.OpenGLES3 });
+        PlayerSettings.MTRendering = true;
+        PlayerSettings.SetMobileMTRendering(BuildTargetGroup.Android, true);
+        PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel19;
+        PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+        PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
+        PlayerSettings.SetApiCompatibilityLevel(BuildTargetGroup.Android, ApiCompatibilityLevel.NET_4_6);
+        PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.Android, Il2CppCompilerConfiguration.Master);
+        PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+
+        EditorUserBuildSettings.androidBuildType = AndroidBuildType.Release;
+        EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+        EditorUserBuildSettings.development = false;
+        EditorUserBuildSettings.connectProfiler = false;
+        EditorUserBuildSettings.allowDebugging = false;
+    }
+    #endregion
     
-    public static void PerformiOSBuildForDevelopment(string outputDirectory)
+    #region iOS
+    public static void PerformiOSBuild(string type, string location)
+    {
+        var output = Path.Combine(location, "Build/iOS");
+        BuildOptions options;
+        
+        switch (type)
+        {
+            case "development":
+                SetiOSBuildSettingsDevelopment();
+                output = Path.Combine(output, "Development");
+                options = BuildOptions.CompressWithLz4;
+                break;
+            case "qa":
+                output = Path.Combine(output, "QA");
+                options = BuildOptions.CompressWithLz4HC;
+                break;
+            case "release":
+                output = Path.Combine(output, "Release");
+                options = BuildOptions.CompressWithLz4HC;
+                break;
+            default:
+                throw new System.ArgumentException($"Invalid argument: {type}");
+        }
+        
+        PerformBuild(output, BuildTarget.Android, options);
+    }
+
+    private static void SetiOSBuildSettingsDevelopment()
     {
         PlayerSettings.colorSpace = ColorSpace.Linear;
         PlayerSettings.SetGraphicsAPIs(BuildTarget.iOS, new [] { GraphicsDeviceType.Metal });
@@ -66,16 +163,12 @@ public class UniversalBuildSettings : ScriptableObject
         EditorUserBuildSettings.connectProfiler = true;
         EditorUserBuildSettings.allowDebugging = true;
         EditorUserBuildSettings.symlinkLibraries = true;
-        
-        var targetDirectory = Path.Combine(outputDirectory, "Build/iOS/Development/Project");
-        if (!Directory.Exists(targetDirectory))
-            Directory.CreateDirectory(targetDirectory);
-
-        PerformBuild(targetDirectory, BuildTarget.iOS, BuildOptions.CompressWithLz4);
     }
+    #endregion
 
     private static void PerformBuild(string location, BuildTarget target, BuildOptions options)
     {
+        Directory.CreateDirectory(location);
         var report = BuildPipeline.BuildPlayer(EnabledLevels, location, target, options);
         Debug.Log($"Build {report.summary.result}");
     }

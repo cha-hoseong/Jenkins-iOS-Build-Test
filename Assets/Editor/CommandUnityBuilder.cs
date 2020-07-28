@@ -1,62 +1,52 @@
-﻿using System.Collections;
-using System.Collections.Generic;
-using UnityEditor.AddressableAssets.Settings;
+﻿using System.Linq;
 using UnityEngine;
 
 public class CommandUnityBuilder
 {
-    private static void PerformAndroid()
+    private static void PerformAndroidBuild()
     {
-        var type = GetArgumentValue("-buildType");
-        if (string.IsNullOrEmpty(type))
+        try
         {
-            Debug.Log($"Invalid command: {type}");
-            return;
+            UniversalBuildSettings.AssetBuild = ShouldPerformAssetBuild();
+            UniversalBuildSettings.PerformAndroidBuild(GetBuildType(), GetBuildPath());
         }
-
-        type = type.ToLower();
-        var path = GetBuildPath();
-
-        switch (type)
+        catch (System.Exception error)
         {
-            case "development":
-                UniversalBuildSettings.PerformAndroidForDevelopment(path);
-                break;
-            case "qa":
-                break;
-            case "release":
-                break;
+            Debug.LogError(error);
         }
     }
     
     private static void PerformiOSBuild()
     {
+        // var buildPath = GetArgumentValue("-buildPath");
+        // if (string.IsNullOrEmpty(buildPath))
+        //     buildPath = "./";
+        // UniversalBuildSettings.PerformiOSBuild(buildPath);
+    }
+
+    private static bool ShouldPerformAssetBuild()
+    {
+        return HasArgument("-assetBuild");
+    }
+
+    private static string GetBuildType()
+    {
         var type = GetArgumentValue("-buildType");
         if (string.IsNullOrEmpty(type))
-        {
-            Debug.Log($"Invalid command: {type}");
-            return;
-        }
-        
-        type = type.ToLower();
-        var path = GetBuildPath();
-        
-        switch (type)
-        {
-            case "development":
-                UniversalBuildSettings.PerformiOSBuildForDevelopment(path);
-                break;
-            case "qa":
-                break;
-            case "release":
-                break;
-        }
+            throw new System.ArgumentNullException("-buildType", "Must have build type!");
+        return type.ToLower();
     }
 
     private static string GetBuildPath()
     {
         var buildPath = GetArgumentValue("-buildPath");
         return string.IsNullOrEmpty(buildPath) ? "./" : buildPath;
+    }
+
+    private static bool HasArgument(string argument)
+    {
+        var args = System.Environment.GetCommandLineArgs();
+        return args.Contains(argument);
     }
 
     private static string GetArgumentValue(string argument)
