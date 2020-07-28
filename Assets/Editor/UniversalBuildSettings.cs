@@ -17,8 +17,35 @@ public class UniversalBuildSettings : ScriptableObject
         .Where(scene => scene.enabled)
         .Select(scene => scene.path)
         .ToArray();
+
+    public static void PerformAndroidForDevelopment(string outputDirectory)
+    {
+        PlayerSettings.colorSpace = ColorSpace.Linear;
+        PlayerSettings.SetGraphicsAPIs(BuildTarget.Android,
+            new [] { GraphicsDeviceType.Vulkan, GraphicsDeviceType.OpenGLES3 });
+        PlayerSettings.MTRendering = true;
+        PlayerSettings.SetMobileMTRendering(BuildTargetGroup.Android, true);
+        PlayerSettings.Android.minSdkVersion = AndroidSdkVersions.AndroidApiLevel19;
+        PlayerSettings.Android.targetSdkVersion = AndroidSdkVersions.AndroidApiLevelAuto;
+        PlayerSettings.SetScriptingBackend(BuildTargetGroup.Android, ScriptingImplementation.IL2CPP);
+        PlayerSettings.SetApiCompatibilityLevel(BuildTargetGroup.Android, ApiCompatibilityLevel.NET_4_6);
+        PlayerSettings.SetIl2CppCompilerConfiguration(BuildTargetGroup.Android, Il2CppCompilerConfiguration.Debug);
+        PlayerSettings.Android.targetArchitectures = AndroidArchitecture.ARM64;
+
+        EditorUserBuildSettings.androidBuildType = AndroidBuildType.Debug;
+        EditorUserBuildSettings.androidBuildSystem = AndroidBuildSystem.Gradle;
+        EditorUserBuildSettings.development = true;
+        EditorUserBuildSettings.connectProfiler = true;
+        EditorUserBuildSettings.allowDebugging = true;
+
+        var targetDirectory = Path.Combine(outputDirectory, "Build/Android/Development");
+        if (!Directory.Exists(targetDirectory))
+            Directory.CreateDirectory(targetDirectory);
+        
+        PerformBuild(targetDirectory, BuildTarget.Android, BuildOptions.CompressWithLz4);
+    }
     
-    public static void PerformiOSBuild(string outputDirectory)
+    public static void PerformiOSBuildForDevelopment(string outputDirectory)
     {
         PlayerSettings.colorSpace = ColorSpace.Linear;
         PlayerSettings.SetGraphicsAPIs(BuildTarget.iOS, new [] { GraphicsDeviceType.Metal });
@@ -34,12 +61,17 @@ public class UniversalBuildSettings : ScriptableObject
         PlayerSettings.iOS.targetOSVersionString = "12.4";
         PlayerSettings.SetArchitecture(BuildTargetGroup.iOS, (int)PlayerSettingsArchitecture.ARM64);
 
+        EditorUserBuildSettings.iOSBuildConfigType = iOSBuildType.Debug;
+        EditorUserBuildSettings.development = true;
+        EditorUserBuildSettings.connectProfiler = true;
+        EditorUserBuildSettings.allowDebugging = true;
+        EditorUserBuildSettings.symlinkLibraries = true;
+        
         var targetDirectory = Path.Combine(outputDirectory, "Build/iOS/Development/Project");
         if (!Directory.Exists(targetDirectory))
             Directory.CreateDirectory(targetDirectory);
-        const BuildOptions options = BuildOptions.Development | BuildOptions.ConnectWithProfiler | BuildOptions.SymlinkLibraries;
-        
-        PerformBuild(targetDirectory, BuildTarget.iOS, options);
+
+        PerformBuild(targetDirectory, BuildTarget.iOS, BuildOptions.CompressWithLz4);
     }
 
     private static void PerformBuild(string location, BuildTarget target, BuildOptions options)
