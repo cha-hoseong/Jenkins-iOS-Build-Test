@@ -47,8 +47,7 @@ public class UniversalBuildSettings : ScriptableObject
                 throw new System.ArgumentException($"Invalid argument: {type}");
         }
         
-        if (!Directory.Exists(location))
-            Directory.CreateDirectory(location);
+        Directory.CreateDirectory(location);
         
         var output = Path.Combine(location, $"{PlayerSettings.productName}.apk");
         PerformBuild(output, BuildTarget.Android, options);
